@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 from collections import deque
+import pyautogui
 
 # Инициализация MediaPipe
 mp_hands = mp.solutions.hands
@@ -14,6 +15,8 @@ cap = cv2.VideoCapture(0)
 
 # 💡 Храним историю X координат запястья для свайпа
 positions = deque(maxlen=10)
+finger_positions = deque(maxlen=10)
+middle_index = deque(maxlen=10)
 
 def is_thumb_up(landmarks):
     thumb_tip = landmarks[4]
@@ -36,14 +39,47 @@ def is_middle_up(landmarks):
 def swipe(landmarks):
     # Добавляем координату X запястья
     positions.append(landmarks[0].x)
+    finger_positions.append([landmarks[8].x, landmarks[12].x, landmarks[16].x])
+
+    if len(finger_positions) == finger_positions.maxlen:
+        delta = ((finger_positions[-1][0] - finger_positions[0][0]) + (finger_positions[-1][1] - finger_positions[0][1]) +
+                 (finger_positions[-1][2] - finger_positions[0][2])) / 3
+        if delta > 0.5:
+            return "Swipe Right"
+        elif delta < -0.5:
+            return "Swipe Left"
 
     if len(positions) == positions.maxlen:
         delta = positions[-1] - positions[0]
-        if delta > 0.2:
+        if delta > 0.5:
             return "Swipe Right"
-        elif delta < -0.2:
+        elif delta < -0.5:
             return "Swipe Left"
-    return None
+        
+
+def scroll(landmarks):
+    index_tip = landmarks[8]
+    index_ip = landmarks[6]
+    middle_tip = landmarks[12]
+    middle_ip = landmarks[10]
+
+    two_fingers = index_tip.y < index_ip.y and middle_tip.y < middle_ip.y
+    fingers_down = all(landmarks[i].y > landmarks[i - 2].y for i in [16, 20])
+
+    middle_index.append([index_tip.y, middle_tip.y])
+
+    if two_fingers and fingers_down and len(middle_index) == middle_index.maxlen:
+        delta = ((middle_index[-1][0] - middle_index[0][0]) + (middle_index[-1][1] - middle_index[0][1]))/2
+        if delta > 0.2:
+            return "Scroll Up"
+        elif delta < -0.5:
+            return "Scroll Down"
+
+def spacebar(landmarks):
+    fingers_down = all(landmarks[i].y > landmarks[i - 3].y for i in [8, 12, 16, 20])
+
+    return fingers_down
+
 
 while True:
     ret, frame = cap.read()
@@ -60,14 +96,27 @@ while True:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            if is_thumb_up(hand_landmarks.landmark):
-                gesture = "👍 Thumbs Up!"
-            elif is_middle_up(hand_landmarks.landmark):
+            scrolll = scroll(hand_landmarks.landmark)
+
+            if is_middle_up(hand_landmarks.landmark):
                 gesture = "Fuck you"
+            elif scrolll:
+                gesture = scrolll
+                if scrolll == "Scroll Down":
+                    pyautogui.scroll(-100)
+                else:
+                    pyautogui.scroll(100)
+            elif spacebar(hand_landmarks.landmark):
+                gesture = "Stop"
+                pyautogui.press("space")
             else:
                 swipe_gesture = swipe(hand_landmarks.landmark)
                 if swipe_gesture:
                     gesture = swipe_gesture
+                    if swipe_gesture == "Swipe Left":
+                        pyautogui.press('left')
+                    if swipe_gesture == "Swipe Right": 
+                        pyautogui.press('right')
 
     if gesture:
         cv2.putText(frame, gesture, (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
