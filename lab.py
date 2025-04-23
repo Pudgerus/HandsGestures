@@ -58,17 +58,18 @@ def swipe(landmarks):
         
 
 def scroll(landmarks):
-    index_tip = landmarks[8]
+    index_tip = landmarks[8]                                            
     index_ip = landmarks[6]
     middle_tip = landmarks[12]
     middle_ip = landmarks[10]
 
     two_fingers = index_tip.y < index_ip.y and middle_tip.y < middle_ip.y
     fingers_down = all(landmarks[i].y > landmarks[i - 2].y for i in [16, 20])
+    two_fingers_x = index_tip.x > index_ip.x and middle_tip.x > middle_ip.x
 
     middle_index.append([index_tip.y, middle_tip.y])
 
-    if two_fingers and fingers_down and len(middle_index) == middle_index.maxlen:
+    if (two_fingers and fingers_down and len(middle_index) == middle_index.maxlen) or (two_fingers_x and fingers_down and len(middle_index) == middle_index.maxlen):
         delta = ((middle_index[-1][0] - middle_index[0][0]) + (middle_index[-1][1] - middle_index[0][1]))/2
         if delta > 0.2:
             return "Scroll Up"
@@ -106,9 +107,9 @@ while True:
                     pyautogui.scroll(-100)
                 else:
                     pyautogui.scroll(100)
-            elif spacebar(hand_landmarks.landmark):
-                gesture = "Stop"
-                pyautogui.press("space")
+            # elif spacebar(hand_landmarks.landmark):
+            #     gesture = "Stop"
+            #     pyautogui.press("space")
             else:
                 swipe_gesture = swipe(hand_landmarks.landmark)
                 if swipe_gesture:
