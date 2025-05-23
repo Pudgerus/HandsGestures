@@ -2,18 +2,49 @@ import cv2
 import mediapipe as mp
 from collections import deque
 import pyautogui
+from tensorflow.keras.models import load_model
+import numpy as np
 
-# Инициализация MediaPipe
+class_names = [
+    'Doing other things',
+    'Drumming Fingers',
+    'No gesture',
+    'Pulling Hand In',
+    'Pulling Two Fingers In',
+    'Pushing Hand Away',
+    'Pushing Two Fingers Away',
+    'Rolling Hand Backward',
+    'Rolling Hand Forward',
+    'Shaking Hand',
+    'Sliding Two Fingers Down',
+    'Sliding Two Fingers Left',
+    'Sliding Two Fingers Right',
+    'Sliding Two Fingers Up',
+    'Stop Sign',
+    'Swiping Down',
+    'Swiping Left',
+    'Swiping Right',
+    'Swiping Up',
+    'Thumb Down',
+    'Thumb Up',
+    'Turning Hand Clockwise',
+    'Turning Hand Counterclockwise',
+    'Zooming In With Full Hand',
+    'Zooming In With Two Fingers',
+    'Zooming Out With Full Hand',
+    'Zooming Out With Two Fingers'
+]
+
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False,
                        max_num_hands=1,
                        min_detection_confidence=0.7)
 mp_draw = mp.solutions.drawing_utils
 
-# Камера
 cap = cv2.VideoCapture(0)
 
-# 💡 Храним историю X координат запястья для свайпа
+model = load_model("gesture_recognition_model.h5")
+
 positions = deque(maxlen=10)
 finger_positions = deque(maxlen=10)
 middle_index = deque(maxlen=10)
@@ -22,7 +53,6 @@ def is_thumb_up(landmarks):
     thumb_tip = landmarks[4]
     thumb_ip = landmarks[3]
     
-    # Остальные пальцы (кончики)
     fingers_down = all(landmarks[i].y > landmarks[i - 2].y for i in [8, 12, 16, 20])
     
     return thumb_tip.y < thumb_ip.y and fingers_down
@@ -37,7 +67,6 @@ def is_middle_up(landmarks):
     return middle_tip.y < middle_ip.y and fingers_down
 
 def swipe(landmarks):
-    # Добавляем координату X запястья
     positions.append(landmarks[0].x)
     finger_positions.append([landmarks[8].x, landmarks[12].x, landmarks[16].x])
 
@@ -82,7 +111,20 @@ def spacebar(landmarks):
     return fingers_down
 
 
-while True:
+def process_frame(image):
+    results = hands.process(image)
+    if results.multi_hand_landmarks:
+        landmarks = results.multi_hand_landmarks
+        data_frame = []
+        for landmark in landmarks.landmark:
+            data_frame.extend([landmark.x, landmark.y, landmark.z])
+        return np.array(data_frame)
+    return None
+
+buffer = deque(maxlen=37)
+
+
+while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
         break
@@ -91,33 +133,46 @@ while True:
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb)
 
+    data_frame = process_frame(frame)
+
     gesture = ""
+
+    if data_frame is not None:
+        buffer.append(data_frame)
+        
+        if len(buffer) == 37:  # Когда буфер заполнен
+            input_data = np.array(buffer).reshape(1, 37, 63)  # (1, 37, 63)
+            prediction = model.predict(input_data)
+            class_id = np.argmax(prediction)
+            gesture = class_names[class_id]
+            print(f"Жест: {gesture}")
+
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            scrolll = scroll(hand_landmarks.landmark)
+            # scrolll = scroll(hand_landmarks.landmark)
 
-            if is_middle_up(hand_landmarks.landmark):
-                gesture = "Fuck you"
-            elif scrolll:
-                gesture = scrolll
-                if scrolll == "Scroll Down":
-                    pyautogui.scroll(-100)
-                else:
-                    pyautogui.scroll(100)
-            # elif spacebar(hand_landmarks.landmark):
-            #     gesture = "Stop"
-            #     pyautogui.press("space")
-            else:
-                swipe_gesture = swipe(hand_landmarks.landmark)
-                if swipe_gesture:
-                    gesture = swipe_gesture
-                    if swipe_gesture == "Swipe Left":
-                        pyautogui.press('left')
-                    if swipe_gesture == "Swipe Right": 
-                        pyautogui.press('right')
+            # if is_middle_up(hand_landmarks.landmark):
+            #     gesture = "Fuck you"
+            # elif scrolll:
+            #     gesture = scrolll
+            #     if scrolll == "Scroll Down":
+            #         pyautogui.scroll(-100)
+            #     else:
+            #         pyautogui.scroll(100)
+            # # elif spacebar(hand_landmarks.landmark):
+            # #     gesture = "Stop"
+            # #     pyautogui.press("space")
+            # else:
+            #     swipe_gesture = swipe(hand_landmarks.landmark)
+            #     if swipe_gesture:
+            #         gesture = swipe_gesture
+            #         if swipe_gesture == "Swipe Left":
+            #             pyautogui.press('left')
+            #         if swipe_gesture == "Swipe Right": 
+            #             pyautogui.press('right')
 
     if gesture:
         cv2.putText(frame, gesture, (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
