@@ -1,0 +1,172 @@
+[
+  {
+    "model": 11,
+    "acc": 0.776,
+    "loss": 0.7775,
+    "units": 32,
+    "dense": 16,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 15,
+    "acc": 0.7692,
+    "loss": 0.7955,
+    "units": 32,
+    "dense": 16,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 18,
+    "acc": 0.7687,
+    "loss": 0.789,
+    "units": 32,
+    "dense": 32,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.001
+  },
+  {
+    "model": 19,
+    "acc": 0.767,
+    "loss": 0.7929,
+    "units": 32,
+    "dense": 32,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 22,
+    "acc": 0.779,
+    "loss": 0.7805,
+    "units": 32,
+    "dense": 32,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.001
+  },
+  {
+    "model": 23,
+    "acc": 0.7824,
+    "loss": 0.7433,
+    "units": 32,
+    "dense": 32,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 35,
+    "acc": 0.7679,
+    "loss": 0.7913,
+    "units": 64,
+    "dense": 16,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 38,
+    "acc": 0.7777,
+    "loss": 0.79,
+    "units": 64,
+    "dense": 16,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.001
+  },
+  {
+    "model": 39,
+    "acc": 0.7849,
+    "loss": 0.7739,
+    "units": 64,
+    "dense": 16,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 42,
+    "acc": 0.7756,
+    "loss": 0.801,
+    "units": 64,
+    "dense": 32,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.001
+  },
+  {
+    "model": 43,
+    "acc": 0.7756,
+    "loss": 0.7922,
+    "units": 64,
+    "dense": 32,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 47,
+    "acc": 0.7824,
+    "loss": 0.7775,
+    "units": 64,
+    "dense": 32,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 59,
+    "acc": 0.7747,
+    "loss": 0.8038,
+    "units": 96,
+    "dense": 16,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 63,
+    "acc": 0.7802,
+    "loss": 0.7816,
+    "units": 96,
+    "dense": 16,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 67,
+    "acc": 0.7841,
+    "loss": 0.776,
+    "units": 96,
+    "dense": 32,
+    "dropout": 0.2,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  },
+  {
+    "model": 70,
+    "acc": 0.776,
+    "loss": 0.7889,
+    "units": 96,
+    "dense": 32,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.001
+  },
+  {
+    "model": 71,
+    "acc": 0.7781,
+    "loss": 0.7877,
+    "units": 96,
+    "dense": 32,
+    "dropout": 0.3,
+    "rec_dropout": 0.2,
+    "lr": 0.0005
+  }
+]
