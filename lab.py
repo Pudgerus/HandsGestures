@@ -43,7 +43,7 @@ mp_draw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 
-model = load_model("gesture_recognition_model.h5")
+model = load_model("best_model.h5")
 
 positions = deque(maxlen=10)
 finger_positions = deque(maxlen=10)
