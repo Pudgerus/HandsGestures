@@ -1,0 +1,55 @@
+MultiHeadAttention
+    Loss: 0.5355228185653687
+    Accuracy: 0.8128523230552673
+    Precision: 0.9475340843200684
+    Recall: 0.6786922216415405
+    ROC AUC: 0.9925399422645569
+    PR AUC: 0.9063237905502319
+
+LearningRate = 0.008
+    Loss: 0.6048292517662048
+    Accuracy: 0.799323558807373
+    Precision: 0.8051203489303589
+    Recall: 0.7918075919151306
+    ROC AUC: 0.992484450340271
+    PR AUC: 0.8973338603973389
+
+MultiHeadAttention + SkipConnection + BatchNormalization + GRU
+    Loss: 0.5229803323745728
+    Accuracy: 0.8154829144477844
+    Precision: 0.9485564231872559
+    Recall: 0.6790680289268494
+    ROC AUC: 0.9941383600234985
+    PR AUC: 0.9107075333595276
+
+MultiHeadAttention + SkipConnection + BatchNormalization + LSTM
+    Loss: 0.5317839980125427
+    Accuracy: 0.8109733462333679
+    Precision: 0.942558765411377
+    Recall: 0.6783164143562317
+    ROC AUC: 0.9937012195587158
+    PR AUC: 0.9057910442352295
+
+MultiHeadAttention + SkipConnection + BatchNormalization + FocallLoss + GRU
+    Loss: 0.07669387757778168
+    Accuracy: 0.8121007084846497
+    Precision: 0.9619205594062805
+    Recall: 0.6550168991088867
+    ROC AUC: 0.9658909440040588
+    PR AUC: 0.9038117527961731
+
+MultiHeadAttention + SkipConnection + BatchNormalization + FocallLoss + GRU + Dropuut(0.8) + RandomShifting
+    Loss: 0.11024989187717438
+    Accuracy: 0.7297928333282471
+    Precision: 0.9160779118537903
+    Recall: 0.5398050546646118
+    ROC AUC: 0.9238900542259216
+    PR AUC: 0.776388943195343
+
+MultiHeadAttention + SkipConnection + BatchNormalization + FocallLoss + GRU + Dropuut(0.5) + RandomShifting
+    Loss: 0.11157439649105072
+    Accuracy: 0.7244110703468323
+    Precision: 0.9125928282737732
+    Recall: 0.5364540815353394
+    ROC AUC: 0.9243388175964355
+    PR AUC: 0.7750362753868103

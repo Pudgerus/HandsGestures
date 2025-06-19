@@ -4,36 +4,22 @@ from collections import deque
 import pyautogui
 from tensorflow.keras.models import load_model
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+import time
+from tensorflow_addons.optimizers import AdamW 
+import joblib
 
-class_names = [
-    'Doing other things',
-    'Drumming Fingers',
-    'No gesture',
-    'Pulling Hand In',
-    'Pulling Two Fingers In',
-    'Pushing Hand Away',
-    'Pushing Two Fingers Away',
-    'Rolling Hand Backward',
-    'Rolling Hand Forward',
-    'Shaking Hand',
-    'Sliding Two Fingers Down',
-    'Sliding Two Fingers Left',
-    'Sliding Two Fingers Right',
-    'Sliding Two Fingers Up',
-    'Stop Sign',
-    'Swiping Down',
-    'Swiping Left',
-    'Swiping Right',
-    'Swiping Up',
-    'Thumb Down',
-    'Thumb Up',
-    'Turning Hand Clockwise',
-    'Turning Hand Counterclockwise',
-    'Zooming In With Full Hand',
-    'Zooming In With Two Fingers',
-    'Zooming Out With Full Hand',
-    'Zooming Out With Two Fingers'
-]
+class_names = ['Doing other things', 'No gesture',
+    'Swiping Down', 'Swiping Left', 'Swiping Right', 'Swiping Up']
+
+def focal_loss_fixed(y_true, y_pred, gamma=2., alpha=0.25):
+    y_pred = tf.clip_by_value(y_pred, 1e-7, 1 - 1e-7)
+    cross_entropy = -y_true * tf.math.log(y_pred)
+    weight = alpha * tf.math.pow(1 - y_pred, gamma)
+    loss = weight * cross_entropy
+    return tf.reduce_sum(loss, axis=1)
+
+allowed_points = [0, 1, 5, 6, 8, 9, 10, 12, 13, 17]
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False,
@@ -43,7 +29,8 @@ mp_draw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 
-model = load_model("best_model.h5")
+model = load_model("model_good.keras")
+
 
 positions = deque(maxlen=10)
 finger_positions = deque(maxlen=10)
@@ -114,15 +101,25 @@ def spacebar(landmarks):
 def process_frame(image):
     results = hands.process(image)
     if results.multi_hand_landmarks:
-        landmarks = results.multi_hand_landmarks
         data_frame = []
-        for landmark in landmarks.landmark:
-            data_frame.extend([landmark.x, landmark.y, landmark.z])
+        for hand_landmarks in results.multi_hand_landmarks:
+            # for i in [0, 1, 5, 6, 8, 9, 10, 12, 13, 17]:
+            #     data_frame.extend([-hand_landmarks.landmark[i].x, hand_landmarks.landmark[i].y])
+            for landmark in hand_landmarks.landmark:
+                data_frame.extend([-landmark.x*176, landmark.y*100, landmark.z*176])
         return np.array(data_frame)
     return None
 
 buffer = deque(maxlen=37)
 
+minmax = joblib.load('minmax.save')
+
+last_gesture_time = 0
+debounce_delay = 1.0
+prediction_buffer = deque(maxlen=5)
+gesture_threshold = 7
+confidence_threshold = 0.5
+confidence = 0
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -133,49 +130,43 @@ while cap.isOpened():
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb)
 
-    data_frame = process_frame(frame)
-
-    gesture = ""
-
-    if data_frame is not None:
-        buffer.append(data_frame)
-        
-        if len(buffer) == 37:  # Когда буфер заполнен
-            input_data = np.array(buffer).reshape(1, 37, 63)  # (1, 37, 63)
-            prediction = model.predict(input_data)
-            class_id = np.argmax(prediction)
-            gesture = class_names[class_id]
-            print(f"Жест: {gesture}")
-
-
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # scrolll = scroll(hand_landmarks.landmark)
+    data_frame = process_frame(frame)
+    gesture = ""
+    class_id = None
 
-            # if is_middle_up(hand_landmarks.landmark):
-            #     gesture = "Fuck you"
-            # elif scrolll:
-            #     gesture = scrolll
-            #     if scrolll == "Scroll Down":
-            #         pyautogui.scroll(-100)
-            #     else:
-            #         pyautogui.scroll(100)
-            # # elif spacebar(hand_landmarks.landmark):
-            # #     gesture = "Stop"
-            # #     pyautogui.press("space")
-            # else:
-            #     swipe_gesture = swipe(hand_landmarks.landmark)
-            #     if swipe_gesture:
-            #         gesture = swipe_gesture
-            #         if swipe_gesture == "Swipe Left":
-            #             pyautogui.press('left')
-            #         if swipe_gesture == "Swipe Right": 
-            #             pyautogui.press('right')
+    if data_frame is not None:
+        buffer.append(data_frame)
+        
+        if len(buffer) == 37:
+            scaledBuffer = minmax.transform(buffer)
+            input_data = np.array(scaledBuffer).reshape(1, 37, 42)
+            prediction = model.predict(input_data)
+            confidence = np.max(prediction)
+            if confidence > 0.1:
+                class_id = np.argmax(prediction)
+                prediction_buffer.append(class_id)
+                
+            
+            # if (time.time() - last_gesture_time) > debounce_delay:
+            #     last_gesture_time = time.time()
+            print(f"Жест: {class_id}, уверенность: {prediction} ")
+
+            if class_id == 4:
+                pyautogui.press('right')
+            elif class_id == 3:
+                pyautogui.press('left')
+            elif class_id == 2:
+                pyautogui.scroll(-100)
+            elif class_id == 5:
+                pyautogui.scroll(100)
+                
 
     if gesture:
-        cv2.putText(frame, gesture, (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
+        cv2.putText(frame, gesture + ' ' + str(confidence), (50, 100), cv2.FONT_HERSHEY_SIMPLEX,
                     2, (0, 255, 0), 4)
 
     cv2.imshow("Gesture Detection", frame)
